@@ -2,6 +2,8 @@
 
 from __future__ import print_function
 
+from numpy.core.numeric import correlate
+
 import rospy
 from tf import TransformListener, TransformBroadcaster
 from tf import transformations
@@ -66,6 +68,7 @@ class ChArUcoBoardNode(object):
 
         rospy.Subscriber("/image", Image, self.publish_marker_transform)
         self._marker_pub = rospy.Publisher("/tags", MarkerTagDetection, queue_size=10)
+        print(f"Using {self._board_config} and {_required_dict}")
 
     def publish_marker_transform(self, cam_img):
         frame = self._cv_bridge.imgmsg_to_cv2(cam_img, desired_encoding="rgb8")
@@ -76,8 +79,16 @@ class ChArUcoBoardNode(object):
         corners, ids, rejected_img_points = aruco.detectMarkers(gray, self._dict)
 
         if ids is not None and len(ids) > 0:
+            img = gray
+            for arr in corners:
+                for corn in arr[0]:
+                    img = cv2.circle(img, (int(corn[0]), int(corn[1])), radius=5, color=(0, 0, 255), thickness=5)
+            cv2.imwrite("/ros-ws/src/prl_camera_pose_calibration/launch/img.jpg", img)
+            print(f"{len(ids)} Markers found!")
+            print(ids)
             ret, ch_corners, ch_ids = aruco.interpolateCornersCharuco(corners, ids, gray, self._board, self.camera.K, self.camera.D)
             # if there are enough corners to get a reasonable result
+            print(ch_corners)
             if ret > 3:
                 use_guess = self._last_tvec is not None and self._last_rvev is not None
                 retval, rvec, tvec = aruco.estimatePoseCharucoBoard(ch_corners, ch_ids, self._board, self.camera.K,
@@ -117,9 +128,11 @@ class ChArUcoBoardNode(object):
                     tag.pose.pose.position = Point(*tvec)
                     tag.pose.pose.orientation = Quaternion(*quaternion)
                     tag.pose.header = cam_img.header
+                    print("Publisihng marker")
                     self._marker_pub.publish(tag)
 
                     if self._publish_tf:
+                        print("Publisihng tf")
                         self._tf_broadcaster.sendTransform(translation=tvec,
                                                            rotation=quaternion,
                                                            time=cam_img.header.stamp,
