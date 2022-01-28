@@ -122,11 +122,9 @@ class ChArUcoBoardNode(object):
                     tag.pose.pose.position = Point(*tvec)
                     tag.pose.pose.orientation = Quaternion(*quaternion)
                     tag.pose.header = cam_img.header
-                    print("Publisihng marker")
                     self._marker_pub.publish(tag)
 
                     if self._publish_tf:
-                        print("Publisihng tf")
                         self._tf_broadcaster.sendTransform(translation=tvec,
                                                            rotation=quaternion,
                                                            time=cam_img.header.stamp,
