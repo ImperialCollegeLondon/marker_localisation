@@ -5,7 +5,31 @@
 rs2_intrinsics get_rs2_int_from_camera_info(const sensor_msgs::CameraInfoConstPtr& caminf){
     rs2_intrinsics rsint;
 
+    rsint.height = caminf->height;
+    rsint.width = caminf->width;
+
+    rsint.fx = caminf->K[0];
+    rsint.fy = caminf->K[4];
+    rsint.ppx = caminf->K[2];
+    rsint.ppy = caminf->K[5];
+
+    rsint.model = RS2_DISTORTION_FTHETA;
+
+    const std::vector<double> d = caminf->D;
+    std::copy(d.begin(), d.end(), rsint.coeffs);
+
     return rsint; 
+}
+
+rs2_extrinsics get_rs2_ext(){
+    rs2_extrinsics rsext;
+
+    float trans [] = {0.0, 0.0, 0.0};
+    float rot [] = {1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0};
+    std::copy(rot, rot+9, rsext.rotation);
+    std::copy(trans, trans+3, rsext.translation);
+
+    return rsext;
 }
 
 // void homography_compute2(const double c[4][4], matd_t* H);

@@ -48,6 +48,7 @@ public:
     void infoCallback(const sensor_msgs::CameraInfoConstPtr& info_msg)
     {
         rs2_intrinsics rsint = get_rs2_int_from_camera_info(info_msg);
+        rs2_extrinsics rsext = get_rs2_ext();
 
     }
     
