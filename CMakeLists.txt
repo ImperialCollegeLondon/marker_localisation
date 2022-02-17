@@ -114,6 +114,8 @@ generate_messages(
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
+  INCLUDE_DIRS include/
+  LIBRARIES t265_apriltag_utils
   CATKIN_DEPENDS rospy std_msgs geometry_msgs sensor_msgs image_geometry cv_bridge image_transport tf tf_conversions message_runtime
 )
 
@@ -124,14 +126,14 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-# include
+  include
   ${catkin_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
-# add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/marker_localisation.cpp
-# )
+add_library(t265_apriltag_utils
+  src/t265_apriltag_utils.cpp
+)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -155,6 +157,7 @@ add_executable(april_t265 src/t265_apriltag.cpp)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(april_t265
+  t265_apriltag_utils
   ${catkin_LIBRARIES}
 )
 
