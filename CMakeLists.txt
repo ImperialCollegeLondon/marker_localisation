@@ -19,8 +19,9 @@ find_package(catkin REQUIRED COMPONENTS
   image_transport
   tf
   tf_conversions
-  apriltag
 )
+
+find_package(apriltag REQUIRED)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -158,6 +159,8 @@ add_executable(april_t265 src/t265_apriltag.cpp)
 ## Specify libraries to link a library or executable target against
 target_link_libraries(april_t265
   t265_apriltag_utils
+  apriltag::apriltag
+  realsense2
   ${catkin_LIBRARIES}
 )
 

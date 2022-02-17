@@ -7,6 +7,7 @@
 #include <message_filters/subscriber.h>
 #include <tf/transform_broadcaster.h>
 #include <image_transport/image_transport.h>
+#include <cv_bridge/cv_bridge.h>
 
 
 #include <librealsense2/rs.hpp>
@@ -49,6 +50,7 @@ public:
     {
         rs2_intrinsics rsint = get_rs2_int_from_camera_info(info_msg);
         rs2_extrinsics rsext = get_rs2_ext();
+        // cv_bridge::toCvShare(msg, "bgr8")->image
 
     }
     
