@@ -199,7 +199,7 @@ void apriltag_manager::deproject(double pt[2], const rs2_intrinsics &intr, const
 }
 
 
-// void find_tag(){
+// void apriltag_manager::find_tag(){
 
 //     std::async(std::launch::async, std::bind([&tag_manager](rs2::frame img, int fn, rs2_pose pose){
 //         auto tags = tag_manager.detect((unsigned char*)img.get_data(), &pose);
