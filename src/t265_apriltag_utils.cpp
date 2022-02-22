@@ -1,3 +1,4 @@
+// based on https://github.com/IntelRealSense/librealsense/tree/master/examples/pose-apriltag
 #include "t265_apriltag_utils/t265_apriltag_utils.h"
 
 #define FORMAT_VALUE std::fixed << std::right << std::setprecision(3) << std::setw(6)
@@ -33,6 +34,17 @@ rs2_extrinsics get_rs2_ext()
 
     return rsext;
 }
+
+tf::Quaternion to_quaternion(const float (&rot)[9]){
+
+    double w = sqrt(1.0 + rot[0] + rot[4] + rot[8]) / 2.0;
+    double x = (rot[7] - rot[5]) / (4.0 * w);
+    double y = (rot[2] - rot[6]) / (4.0 * w);
+    double z = (rot[3] - rot[1]) / (4.0 * w);
+
+    return tf::Quaternion(x, y, z, w); 
+}
+
 
 static transformation to_transform(const double R[9], const double t[3])
 {
@@ -85,7 +97,7 @@ static transformation operator*(const transformation &a, const transformation &b
     return tf;
 }
 
-static std::string print(const transformation &tf)
+std::string print(const transformation &tf)
 {
     std::stringstream ss;
     ss << "R:";
@@ -199,99 +211,6 @@ void apriltag_manager::deproject(double pt[2], const rs2_intrinsics &intr, const
 }
 
 
-// void apriltag_manager::find_tag(){
-
-//     std::async(std::launch::async, std::bind([&tag_manager](rs2::frame img, int fn, rs2_pose pose){
-//         auto tags = tag_manager.detect((unsigned char*)img.get_data(), &pose);
-
-//         if(tags.pose_in_camera.size() == 0) {
-//             std::cout << "frame " << fn << "|no Apriltag detections" << std::endl;
-//         }
-//         for(int t=0; t<tags.pose_in_camera.size(); ++t){
-//             std::stringstream ss; ss << "frame " << fn << "|tag id: " << tags.get_id(t) << "|";
-//             std::cout << ss.str() << "camera " << print(tags.pose_in_camera[t]) << std::endl;
-//             std::cout << std::setw(ss.str().size()) << " " << "world  " <<
-//                         (pose.tracker_confidence == 3 ? print(tags.pose_in_world[t]) : " NA ") << std::endl << std::endl;
-//         }
-//     }, fisheye_frame, frame_number, camera_pose));
-// }
-
-// int main(int argc, char * argv[]) try
-// {
-//     // Declare RealSense pipeline, encapsulating the actual device and sensors
-//     rs2::pipeline pipe;
-//     // Create a configuration for configuring the pipeline with a non default profile
-//     rs2::config cfg;
-//     // Add pose stream
-//     cfg.enable_stream(RS2_STREAM_POSE, RS2_FORMAT_6DOF);
-//     // Enable both image streams
-//     // Note: It is not currently possible to enable only one
-//     cfg.enable_stream(RS2_STREAM_FISHEYE, 1, RS2_FORMAT_Y8);
-//     cfg.enable_stream(RS2_STREAM_FISHEYE, 2, RS2_FORMAT_Y8);
-
-//     // replay
-//     if(argc > 1){ cfg.enable_device_from_file(argv[1]); }
-
-//     // Start pipe and get camera calibrations
-//     const int fisheye_sensor_idx = 1;  //for the left fisheye lens of T265
-//     auto pipe_profile       = pipe.start(cfg);
-//     auto fisheye_stream     = pipe_profile.get_stream(RS2_STREAM_FISHEYE, fisheye_sensor_idx);
-//     auto fisheye_intrinsics = fisheye_stream.as<rs2::video_stream_profile>().get_intrinsics();
-//     auto body_fisheye_extr  = fisheye_stream.get_extrinsics_to(pipe_profile.get_stream(RS2_STREAM_POSE));
-//     const double tag_size_m = 0.144; // The expected size of the tag in meters. This is required to get the relative pose
-
-//     // Create an Apriltag detection manager
-//     apriltag_manager tag_manager(fisheye_intrinsics, body_fisheye_extr, tag_size_m);
-
-//     // Main loop
-//     while (true)
-//     {
-//         // Wait for the next set of frames from the camera
-//         auto frames        = pipe.wait_for_frames();
-//         auto fisheye_frame = frames.get_fisheye_frame(fisheye_sensor_idx);
-//         auto frame_number  = fisheye_frame.get_frame_number();
-//         auto camera_pose   = frames.get_pose_frame().get_pose_data();
-
-//         if(frame_number % 6 == 0)
-//         {
-//             fisheye_frame.keep();
-
-//             std::async(std::launch::async, std::bind([&tag_manager](rs2::frame img, int fn, rs2_pose pose){
-//                 auto tags = tag_manager.detect((unsigned char*)img.get_data(), &pose);
-
-//                 if(tags.pose_in_camera.size() == 0) {
-//                     std::cout << "frame " << fn << "|no Apriltag detections" << std::endl;
-//                 }
-//                 for(int t=0; t<tags.pose_in_camera.size(); ++t){
-//                     std::stringstream ss; ss << "frame " << fn << "|tag id: " << tags.get_id(t) << "|";
-//                     std::cout << ss.str() << "camera " << print(tags.pose_in_camera[t]) << std::endl;
-//                     std::cout << std::setw(ss.str().size()) << " " << "world  " <<
-//                                 (pose.tracker_confidence == 3 ? print(tags.pose_in_world[t]) : " NA ") << std::endl << std::endl;
-//                 }
-//             }, fisheye_frame, frame_number, camera_pose));
-//         }
-//     }
-
-//     return EXIT_SUCCESS;
-// }
-// catch (const rs2::error & e)
-// {
-//     std::cerr << "RealSense error calling " << e.get_failed_function() << "(" << e.get_failed_args() << "):\n    " << e.what() << std::endl;
-//     return EXIT_FAILURE;
-// }
-// catch (const std::exception& e)
-// {
-//     std::cerr << e.what() << std::endl;
-//     return EXIT_FAILURE;
-// }
-
-//
-// Re-compute homography between ideal standard tag image and undistorted tag corners for estimage_tag_pose().
-//
-// @param[in]  c is 4 pairs of tag corners on ideal image and undistorted input image.
-// @param[out] H is the output homography between ideal and undistorted input image.
-// @see        static void apriltag_manager::undistort(...)
-//
 void homography_compute2(const double c[4][4], matd_t *H)
 {
     double A[] = {

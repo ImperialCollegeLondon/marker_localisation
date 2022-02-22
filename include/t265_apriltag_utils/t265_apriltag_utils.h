@@ -13,6 +13,7 @@
 
 #include <sensor_msgs/CameraInfo.h>
 #include <ros/ros.h>
+#include <tf/tf.h>
 
 #include <apriltag/apriltag.h>
 #include <apriltag/tag36h11.h>
@@ -29,7 +30,8 @@ typedef rs2_extrinsics transformation;
 static transformation to_transform(const double R[9], const double t[3]);
 static transformation to_transform(const rs2_quaternion& q, const rs2_vector& t);
 static transformation operator*(const transformation& a, const transformation& b);
-static std::string print(const transformation& tf);
+std::string print(const transformation &tf);
+tf::Quaternion to_quaternion(const float (&rot)[9]);
 
 class apriltag_manager {
 public:

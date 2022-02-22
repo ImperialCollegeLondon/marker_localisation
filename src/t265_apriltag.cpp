@@ -21,7 +21,6 @@ class Detector
 private:
     std::string parent_frame;
     std::string child_frame;
-    bool img_received = false;
     int frame_id = 0;
 
     apriltag_manager tag_manager;
@@ -54,29 +53,35 @@ public:
         if(this->frame_id%6 == 0){
             std::async(std::launch::async, std::bind([this](unsigned char* img, int fn)
             {
-            auto tags = this->tag_manager.detect(img, NULL);
+                auto tags = this->tag_manager.detect(img, NULL);
 
-            if(tags.pose_in_camera.size() == 0) {
-                ROS_INFO("no Apriltag detections");
-            }
-            for(int t=0; t<tags.pose_in_camera.size(); ++t){
-                ROS_INFO("camera ");
-            } },
-            
+                if(tags.pose_in_camera.size() == 0) {
+                    ROS_INFO("no Apriltag detections");
+                }
+                else {
+                    auto tag = tags.pose_in_camera[0];
+
+                    tf::Transform transform;
+                    transform.setOrigin(tf::Vector3(tag.translation[0], tag.translation[1], tag.translation[2]));
+                    tf::Quaternion q = to_quaternion(tag.rotation);
+                    transform.setRotation(q);
+
+                    this->latest_tf = transform;
+                }
+
+                // We focus on the 1st marker (there should only be one), but here is the code to iterate
+                // for(int t=0; t<tags.pose_in_camera.size(); ++t){
+                //     // ROS_INFO("Pose in camera: %s", print(tags.pose_in_camera[t]));
+                //     ROS_INFO_STREAM("camera " << print((transformation)tags.pose_in_camera[t]) << std::endl);
+                //     // ROS_INFO("Pose in world: ");
+                // } 
+            },
             myimg, this->frame_id));
+
         }
 
         delete [] myimg;
         this->frame_id += 1;
-        
-        tf::Transform transform;
-        transform.setOrigin(tf::Vector3(1.0, 0.0, 0.0));
-        tf::Quaternion q;
-        q.setRPY(0, 0, 0);
-        transform.setRotation(q);
-
-        this->latest_tf = transform;
-        this->img_received = true;
     }
 
     void run()
@@ -84,7 +89,7 @@ public:
         ros::Rate loop_rate(30);
         while (ros::ok()){
         
-            if(this->img_received){
+            if(this->frame_id>0){
                 br.sendTransform(tf::StampedTransform(this->latest_tf, ros::Time::now(), this->parent_frame, this->child_frame));
             }
             ros::spinOnce();
