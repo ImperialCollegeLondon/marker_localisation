@@ -36,9 +36,9 @@ public:
     Detector(ros::NodeHandle nh_, rs2_intrinsics rsint, rs2_extrinsics rsext, double marker_size): it(nh_), tag_manager(rsint, rsext, marker_size)
     {
         std::string img_topic;
-        nh.param<std::string>("image", img_topic, "/t265/fisheye1/image_raw");
-        nh.param<std::string>("parent", this->parent_frame, "t265_fisheye1_optical_frame");
-        nh.param<std::string>("child", this->child_frame, "t265_tag");
+        ros::param::param<std::string>("~image", img_topic, "/t265/fisheye1/image_raw");
+        ros::param::param<std::string>("~parent", this->parent_frame, "t265_fisheye1_optical_frame");
+        ros::param::param<std::string>("~child", this->child_frame, "t265_tag");
 
         sub = this->it.subscribe(img_topic, 100, &Detector::imgCallback, this);
         
@@ -101,16 +101,16 @@ public:
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "t265_april_detect");
-    ros::NodeHandle nh("~");
+    ros::NodeHandle nh;
 
     std::string camera_info_topic;
-    nh.param<std::string>("camera_info", camera_info_topic, "/t265/fisheye1/camera_info");
+    ros::param::param<std::string>("~camera_info", camera_info_topic, "/t265/fisheye1/camera_info");
     auto info_msg = ros::topic::waitForMessage<sensor_msgs::CameraInfo>(camera_info_topic, nh);
     rs2_intrinsics rsint = get_rs2_int_from_camera_info(info_msg);
     rs2_extrinsics rsext = get_rs2_ext();
 
     double marker_size;
-    nh.param<double>("marker_size", marker_size, 0.161);
+    ros::param::param<double>("~marker_size", marker_size, 0.161);
 
     Detector d(nh, rsint, rsext, marker_size);
     d.run();
