@@ -25,7 +25,7 @@
   <depend>tf_conversions</depend>
 
   <depend>python3-opencv</depend>
-  <depend>python3-dlib</depend>
+  <!-- <depend>python3-dlib</depend> -->
   <depend>python3-scipy</depend>
   <depend>python3-numpy</depend>
 
